@@ -16,18 +16,20 @@ export function redactSecrets(input: string): string {
     out = out.replace(pattern, "[REDACTED_SECRET]");
   }
 
-  const beginIdx = out.indexOf(PRIVATE_KEY_BEGIN);
-  if (beginIdx !== -1) {
+  let beginIdx = out.indexOf(PRIVATE_KEY_BEGIN);
+  while (beginIdx !== -1) {
     const beginLineEnd = out.indexOf(PRIVATE_KEY_END, beginIdx);
-    if (beginLineEnd !== -1) {
-      const type = out.slice(beginIdx + PRIVATE_KEY_BEGIN.length, beginLineEnd).trim();
-      const closingMarker = `${PRIVATE_KEY_CLOSING_PREFIX}${type}${PRIVATE_KEY_END}`;
-      const closingIdx = out.indexOf(closingMarker, beginLineEnd + PRIVATE_KEY_END.length);
-      if (closingIdx !== -1) {
-        const closingEnd = closingIdx + closingMarker.length;
-        out = `${out.slice(0, beginIdx)}[REDACTED_SECRET]${out.slice(closingEnd)}`;
-      }
+    if (beginLineEnd === -1) break;
+    const type = out.slice(beginIdx + PRIVATE_KEY_BEGIN.length, beginLineEnd).trim();
+    const closingMarker = `${PRIVATE_KEY_CLOSING_PREFIX}${type}${PRIVATE_KEY_END}`;
+    const closingIdx = out.indexOf(closingMarker, beginLineEnd + PRIVATE_KEY_END.length);
+    if (closingIdx === -1) {
+      beginIdx = out.indexOf(PRIVATE_KEY_BEGIN, beginLineEnd + PRIVATE_KEY_END.length);
+      continue;
     }
+    const closingEnd = closingIdx + closingMarker.length;
+    out = `${out.slice(0, beginIdx)}[REDACTED_SECRET]${out.slice(closingEnd)}`;
+    beginIdx = out.indexOf(PRIVATE_KEY_BEGIN, beginIdx + "[REDACTED_SECRET]".length);
   }
 
   return out;
