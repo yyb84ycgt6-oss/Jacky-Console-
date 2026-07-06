@@ -15,6 +15,9 @@ export interface MemoryPod {
 }
 
 const fallbackPods: Array<MemoryPod & { created_at: string }> = [];
+const MAX_USER_SUMMARY_LENGTH = 140;
+const MAX_ASSISTANT_SUMMARY_LENGTH = 180;
+const ELLIPSIS = "...";
 
 function getSupabaseAdminClient(): SupabaseClient | null {
   const url = process.env.SUPABASE_URL;
@@ -88,7 +91,13 @@ export async function saveMemoryPod(pod: MemoryPod): Promise<{ persisted: boolea
 export function buildTurnSummary(userText: string, assistantText: string): string {
   const user = userText.replace(/\s+/g, " ").trim();
   const assistant = assistantText.replace(/\s+/g, " ").trim();
-  const userPart = user.length > 140 ? `${user.slice(0, 137)}...` : user;
-  const assistantPart = assistant.length > 180 ? `${assistant.slice(0, 177)}...` : assistant;
+  const userPart =
+    user.length > MAX_USER_SUMMARY_LENGTH
+      ? `${user.slice(0, MAX_USER_SUMMARY_LENGTH - ELLIPSIS.length)}${ELLIPSIS}`
+      : user;
+  const assistantPart =
+    assistant.length > MAX_ASSISTANT_SUMMARY_LENGTH
+      ? `${assistant.slice(0, MAX_ASSISTANT_SUMMARY_LENGTH - ELLIPSIS.length)}${ELLIPSIS}`
+      : assistant;
   return `User asked: ${userPart}. Jackie responded: ${assistantPart}`;
 }

@@ -59,3 +59,10 @@ Boundary constraints:
 
 export const JACKIE_PREFIX = "Jackie here—";
 export const DEFAULT_USER_ID = "daigle";
+
+export function buildSystemPromptWithRecall(sessionSummary: string | null): string {
+  return `${SYSTEM_PROMPT}
+
+Session recall: ${sessionSummary || "No prior session summary found."}
+Focus on orchestration-level guidance and execution ordering. Do not over-implement code-heavy tangents unless explicitly requested.`;
+}

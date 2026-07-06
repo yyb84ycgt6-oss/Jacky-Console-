@@ -3,15 +3,33 @@ const SECRET_PATTERNS: RegExp[] = [
   /AIza[0-9A-Za-z\-_]{35}/g,
   /ghp_[A-Za-z0-9]{36,}/g,
   /xox[baprs]-[A-Za-z0-9-]{20,}/g,
-  /-----BEGIN [A-Z ]+PRIVATE KEY-----[\s\S]*?-----END [A-Z ]+PRIVATE KEY-----/g,
   /\b(?:api[_-]?key|token|secret|password)\b\s*[:=]\s*[^\s,;]+/gi,
 ];
+
+const PRIVATE_KEY_BEGIN = "-----BEGIN ";
+const PRIVATE_KEY_END = " PRIVATE KEY-----";
+const PRIVATE_KEY_CLOSING_PREFIX = "-----END ";
 
 export function redactSecrets(input: string): string {
   let out = input;
   for (const pattern of SECRET_PATTERNS) {
     out = out.replace(pattern, "[REDACTED_SECRET]");
   }
+
+  const beginIdx = out.indexOf(PRIVATE_KEY_BEGIN);
+  if (beginIdx !== -1) {
+    const beginLineEnd = out.indexOf(PRIVATE_KEY_END, beginIdx);
+    if (beginLineEnd !== -1) {
+      const type = out.slice(beginIdx + PRIVATE_KEY_BEGIN.length, beginLineEnd).trim();
+      const closingMarker = `${PRIVATE_KEY_CLOSING_PREFIX}${type}${PRIVATE_KEY_END}`;
+      const closingIdx = out.indexOf(closingMarker, beginLineEnd + PRIVATE_KEY_END.length);
+      if (closingIdx !== -1) {
+        const closingEnd = closingIdx + closingMarker.length;
+        out = `${out.slice(0, beginIdx)}[REDACTED_SECRET]${out.slice(closingEnd)}`;
+      }
+    }
+  }
+
   return out;
 }
 

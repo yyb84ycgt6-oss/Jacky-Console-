@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { buildTurnSummary, getLatestSessionSummary, isMemoryOnline, saveMemoryPod } from "@/lib/memory-pods";
 import { hasIrreversibleIntent, normalizeLeadingCommand } from "@/lib/security";
 import { ChatMessage, hasAnyModelKeys, streamWithRouting } from "@/lib/models";
-import { DEFAULT_USER_ID, JACKIE_PREFIX, SYSTEM_PROMPT } from "@/lib/system-prompt";
+import { buildSystemPromptWithRecall, DEFAULT_USER_ID, JACKIE_PREFIX } from "@/lib/system-prompt";
 
 const textEncoder = new TextEncoder();
 
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const systemWithContext = `${SYSTEM_PROMPT}\n\nSession recall: ${latestSummary || "No prior session summary found."}\nFocus on orchestration-level guidance and execution ordering. Do not over-implement code-heavy tangents unless explicitly requested.`;
+  const systemWithContext = buildSystemPromptWithRecall(latestSummary);
 
   const normalizedMessages: ChatMessage[] = messages.map((m) => {
     if (m === messages[messages.length - 1] && m.role === "user") {
