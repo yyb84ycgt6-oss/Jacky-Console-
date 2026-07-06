@@ -106,6 +106,7 @@ export async function POST(req: NextRequest) {
   const responseStream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let fullAssistantText = "";
+      let streamCompleted = false;
       try {
         if (!rawMode) {
           controller.enqueue(textEncoder.encode(`${JACKIE_PREFIX} `));
@@ -122,20 +123,23 @@ export async function POST(req: NextRequest) {
           controller.enqueue(textEncoder.encode(chunk));
           fullAssistantText += chunk;
         }
+        streamCompleted = true;
 
-        const summary = buildTurnSummary(normalizedLatestUser, fullAssistantText);
-        try {
-          await saveMemoryPod({
-            user_id: userId,
-            kind: "session_summary",
-            summary,
-            full_text: `USER: ${normalizedLatestUser}\nASSISTANT: ${fullAssistantText}`,
-            metadata: parsed.metadata || {},
-          });
-        } catch (error) {
-          const message = error instanceof Error ? error.message : "Unknown error";
-          const failure = `\n\n${JACKIE_PREFIX} Failed to save pod: ${message}`;
-          controller.enqueue(textEncoder.encode(failure));
+        if (streamCompleted) {
+          const summary = buildTurnSummary(normalizedLatestUser, fullAssistantText);
+          try {
+            await saveMemoryPod({
+              user_id: userId,
+              kind: "session_summary",
+              summary,
+              full_text: `USER: ${normalizedLatestUser}\nASSISTANT: ${fullAssistantText}`,
+              metadata: parsed.metadata || {},
+            });
+          } catch (error) {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            const failure = `\n\n${JACKIE_PREFIX} Failed to save pod: ${message}`;
+            controller.enqueue(textEncoder.encode(failure));
+          }
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error";

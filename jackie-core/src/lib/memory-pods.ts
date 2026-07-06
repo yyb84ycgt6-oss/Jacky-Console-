@@ -14,6 +14,7 @@ export interface MemoryPod {
   metadata?: Record<string, unknown>;
 }
 
+// Best-effort runtime fallback only; not durable across serverless instances/restarts.
 const fallbackPods: Array<MemoryPod & { created_at: string }> = [];
 const MAX_USER_SUMMARY_LENGTH = 140;
 const MAX_ASSISTANT_SUMMARY_LENGTH = 180;

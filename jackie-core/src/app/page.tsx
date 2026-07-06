@@ -11,6 +11,13 @@ type Message = {
   content: string;
 };
 
+function makeId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -22,7 +29,7 @@ export default function Home() {
       const data = await res.json();
       setMessages([
         {
-          id: crypto.randomUUID(),
+          id: makeId(),
           role: "assistant",
           content: data.message,
         },
@@ -38,13 +45,13 @@ export default function Home() {
     const trimmed = input.trim();
     if (!trimmed || isSending) return;
 
-    const nextUser: Message = { id: crypto.randomUUID(), role: "user", content: trimmed };
+    const nextUser: Message = { id: makeId(), role: "user", content: trimmed };
     const history = [...messages, nextUser];
     setMessages(history);
     setInput("");
     setIsSending(true);
 
-    const assistantId = crypto.randomUUID();
+    const assistantId = makeId();
     setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
 
     try {

@@ -1,12 +1,15 @@
 import { Logging } from "@google-cloud/logging";
 
 let loggingClient: Logging | null = null;
+let loggingClientInit: Promise<Logging> | null = null;
 
-function getClient(): Logging | null {
+async function getClient(): Promise<Logging | null> {
   if (!process.env.GCP_PROJECT_ID) return null;
-  if (!loggingClient) {
-    loggingClient = new Logging({ projectId: process.env.GCP_PROJECT_ID });
+  if (loggingClient) return loggingClient;
+  if (!loggingClientInit) {
+    loggingClientInit = Promise.resolve(new Logging({ projectId: process.env.GCP_PROJECT_ID }));
   }
+  loggingClient = await loggingClientInit;
   return loggingClient;
 }
 
@@ -14,7 +17,7 @@ export async function logPodSaveToCloud(params: {
   user_id: string;
   kind: string;
 }): Promise<void> {
-  const client = getClient();
+  const client = await getClient();
   if (!client) return;
 
   try {
