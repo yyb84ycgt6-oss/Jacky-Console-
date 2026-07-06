@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# jackie-core
 
-## Getting Started
+Persistent AI orchestrator for iPhone Safari on Vercel (Next.js 14).
 
-First, run the development server:
+## What is real now
+
+- ✅ Next.js 14 app with App Router
+- ✅ Immutable `SYSTEM_PROMPT` genome in code (`src/lib/system-prompt.ts`)
+- ✅ Model routing: Anthropic Sonnet primary, OpenAI `gpt-5` fallback
+- ✅ Streaming chat responses
+- ✅ Required no-key message: `Jackie here— No model keys set. Add ANTHROPIC_API_KEY or OPENAI_API_KEY in Vercel.`
+- ✅ Memory pods wired to Supabase (`memory_pods`) with `/pod` support
+- ✅ Session-summary auto-save per chat turn (`kind='session_summary'`)
+- ✅ Bootstrap recall on new session (`/api/bootstrap`)
+- ✅ Response guardrails: `Jackie here—` prefix (unless `/raw`), `/confirm` for irreversible intents
+- ✅ Vercel Analytics integrated (`@vercel/analytics`)
+- ✅ Route decision audit logs via `console.log`
+- ✅ Optional Google Cloud Logging mirror for pod saves when `GCP_PROJECT_ID` is set
+- ✅ SQL schema included at `supabase/memory_pods.sql`
+
+## Roadmap / constraints
+
+- ⚠️ Live Vercel URL is created only after deployment from your Vercel account.
+- ⚠️ Next.js 14 has known advisories in upstream dependency data; pinning remains on 14 per request.
+
+## Environment variables
+
+Set these in Vercel Project Settings → Environment Variables:
+
+- `ANTHROPIC_API_KEY` (primary model)
+- `OPENAI_API_KEY` (fallback model)
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_KEY`
+- `GCP_PROJECT_ID` (optional)
+- `GOOGLE_APPLICATION_CREDENTIALS` (optional for Cloud Logging auth when needed)
+- `ANTHROPIC_MODEL` (optional override, default `claude-sonnet-4-5`)
+- `OPENAI_MODEL` (optional override, default `gpt-5`)
+
+## Deploy steps (Vercel)
+
+1. Push this repo.
+2. Import project in Vercel, root directory: `jackie-core`.
+3. Add env vars above.
+4. Deploy.
+
+## Local run
 
 ```bash
+cd jackie-core
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Supabase SQL
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Run:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```sql
+-- file: supabase/memory_pods.sql
+create extension if not exists pgcrypto;
 
-## Learn More
+create table if not exists public.memory_pods (
+  id uuid primary key default gen_random_uuid(),
+  user_id text default 'daigle',
+  created_at timestamptz default now(),
+  kind text check (kind in ('session_summary','pod','decision','artifact_ref')),
+  summary text not null,
+  full_text text,
+  metadata jsonb
+);
 
-To learn more about Next.js, take a look at the following resources:
+create index if not exists memory_pods_user_created_at_idx
+  on public.memory_pods (user_id, created_at desc);
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Required behavior checks
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### Ping check
 
-## Deploy on Vercel
+Send `ping`:
+- If pods exist: `Jackie here— Online. Last we worked on <latest summary>`
+- If not: `Jackie here— Online. No saved session summary yet.`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Memory fallback
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+If Supabase is unavailable, responses include:
+- `Memory offline, no pods saved.`
+
+### `/pod` command
+
+Send `/pod <text>` to store a pod (`kind='pod'`).
+If DB write fails, response includes:
+- `Failed to save pod: <error>`
