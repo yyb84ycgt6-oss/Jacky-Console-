@@ -98,7 +98,7 @@ export default function Home() {
     setAccessories((prev) => ({ ...prev, [accessory]: !prev[accessory] }));
   }
 
-  function useQuickCommand(command: string) {
+  function applyQuickCommand(command: string) {
     setInput(command);
   }
 
@@ -227,7 +227,7 @@ export default function Home() {
           </label>
           <div className={styles.pills}>
             {QUICK_COMMANDS.map((command) => (
-              <button key={command} type="button" onClick={() => useQuickCommand(command)}>
+              <button key={command} type="button" onClick={() => applyQuickCommand(command)}>
                 {command}
               </button>
             ))}
