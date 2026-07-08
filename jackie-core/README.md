@@ -5,6 +5,7 @@ Persistent AI orchestrator for iPhone Safari on Vercel (Next.js 14).
 ## What is real now
 
 - ✅ Next.js 14 app with App Router
+- ✅ High-detail Jackie Global Terminal UI (theme/background controls, accessories, tool deck, command trail)
 - ✅ Immutable `SYSTEM_PROMPT` genome in code (`src/lib/system-prompt.ts`)
 - ✅ Model routing: Anthropic Sonnet primary, OpenAI `gpt-5` fallback
 - ✅ Streaming chat responses
@@ -50,6 +51,16 @@ cd jackie-core
 npm install
 npm run dev
 ```
+
+## Global Terminal experience
+
+The default UI is now a workstation-style terminal surface with:
+
+- theme switching (Obsidian, Midnight Glass, Neon Forge, Aurora Prism)
+- dynamic procedural backgrounds (no static assets)
+- density/font/transparency tuning
+- quick command chips and command trail
+- accessory panels (status HUD, layout minimap, tab navigator, context inspector)
 
 ## Supabase SQL
 
